@@ -1,0 +1,21 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+}
+
+.form-container {
+  flex: 1;
+  padding: 2rem;
+  border-right: 2px solid #f0f0f0;
+  overflow-y: auto;
+}
+
+.map-container {
+  flex: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #e0e0e0;
+}
