@@ -402,7 +402,7 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Vind:</span>
-                    <span>{hoverPoint.windSpeed} m/s</span>
+                    <span>{hoverPoint.windSpeed.toFixed(1)} m/s</span>
                 </div>
             </div>
         )}

@@ -73,8 +73,21 @@ const getWeatherForTimeAndNode = (
     // Helper to get forecast at specific time from a forecast array
     const getForecastAtTime = (forecast: HourlyWeather[]): { windSpeed: number, windDir: number } => {
         if (!forecast || forecast.length === 0) return { windSpeed: 5, windDir: 0 };
+        
+        const startTime = forecast[0].time;
+        const endTime = forecast[forecast.length - 1].time;
+        const duration = endTime - startTime;
+        
+        let lookupTime = targetTimeMs;
+
+        // If target time is beyond the forecast range, loop/cycle the weather pattern
+        // This ensures we don't just hit a static "last known weather" for long trips.
+        if (lookupTime > endTime && duration > 0) {
+            lookupTime = startTime + ((lookupTime - startTime) % duration);
+        }
+
         return forecast.reduce((prev, curr) => 
-            Math.abs(curr.time - targetTimeMs) < Math.abs(prev.time - targetTimeMs) ? curr : prev
+            Math.abs(curr.time - lookupTime) < Math.abs(prev.time - lookupTime) ? curr : prev
         );
     };
 
