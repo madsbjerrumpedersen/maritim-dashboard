@@ -199,6 +199,12 @@ export const calculateVoyageProfile = (
   // fuelConsumptionAtCruise is kg/nm. 
   // Rate (kg/h) = kg/nm * nm/h = kg/nm * cruiseSpeed
   const baseKgPerHour = ship.fuelConsumptionAtCruise * ship.cruiseSpeed;
+  
+  // Physics Model Refinement: Hotel Load vs Propulsion
+  // Not all fuel scales with speed^3. Hotel load (lighting, HVAC, crew) is constant.
+  const HOTEL_LOAD_RATIO = 0.2; // 20% constant load
+  const baseHotelRate = baseKgPerHour * HOTEL_LOAD_RATIO;
+  const basePropulsionRate = baseKgPerHour * (1 - HOTEL_LOAD_RATIO);
 
   // Iterate route segments
   for (let i = 0; i < nodes.length - 1; i++) {
@@ -250,11 +256,10 @@ export const calculateVoyageProfile = (
     
     const resistanceFactor = Math.max(0, windFactor * 0.15); // Only headwind costs extra fuel
     
-    // Updated Fuel Model: Cubic relation to speed
-    // Current Rate = BaseRate * (Speed / Cruise)^3
-    // This strongly rewards slowing down.
+    // Updated Fuel Model: Cubic relation to speed with constant Hotel Load
+    // Current Rate = (PropulsionBase * Ratio^3) + HotelBase
     const speedRatio = actualSpeed / ship.cruiseSpeed;
-    const currentKgPerHour = baseKgPerHour * Math.pow(speedRatio, 3);
+    const currentKgPerHour = (basePropulsionRate * Math.pow(speedRatio, 3)) + baseHotelRate;
     
     // Apply resistance factor to the BURN RATE (fighting wind needs more power for same speed)
     // Actually, physics: Power ~ Speed^3 + Resistance.
