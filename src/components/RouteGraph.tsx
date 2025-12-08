@@ -45,8 +45,48 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
   const getX = (dist: number) => padding.left + (dist / totalDist) * graphWidth;
   const getY = (speed: number) => (height - padding.bottom) - (speed / maxSpeedY) * graphHeight;
 
-  // Generate Path
-  const points = voyage.segments.map(s => `${getX(s.distanceKm)},${getY(s.speedKnots)}`).join(' ');
+  // Generate Smooth Path (Cubic Bezier Spline)
+  const getSplinePath = (points: number[][]) => {
+      if (points.length === 0) return "";
+      if (points.length === 1) return `M ${points[0][0]},${points[0][1]}`;
+
+      // Helper to get control point
+      const controlPoint = (current: number[], previous: number[], next: number[], reverse: boolean) => {
+          const p = previous || current;
+          const n = next || current;
+          const smoothing = 0.15; // 0 to 1, higher is smoother/loopier
+          
+          // Properties of the opposed-line
+          const oX = n[0] - p[0]; 
+          const oY = n[1] - p[1];
+          const length = Math.sqrt(Math.pow(oX, 2) + Math.pow(oY, 2));
+          const angle = Math.atan2(oY, oX) + (reverse ? Math.PI : 0);
+          
+          const lengthC = length * smoothing;
+          const x = current[0] + Math.cos(angle) * lengthC;
+          const y = current[1] + Math.sin(angle) * lengthC;
+          
+          return [x, y];
+      };
+
+      let d = `M ${points[0][0]},${points[0][1]}`;
+      
+      for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[i - 1]; // Previous (can be undefined)
+          const p1 = points[i];     // Current
+          const p2 = points[i + 1]; // Next
+          const p3 = points[i + 2]; // Next Next (can be undefined)
+          
+          const cp1 = controlPoint(p1, p0, p2, false);
+          const cp2 = controlPoint(p2, p1, p3, true);
+          
+          d += ` C ${cp1[0]},${cp1[1]} ${cp2[0]},${cp2[1]} ${p2[0]},${p2[1]}`;
+      }
+      return d;
+  };
+
+  const coordinatePoints = voyage.segments.map(s => [getX(s.distanceKm), getY(s.speedKnots)]);
+  const pathData = getSplinePath(coordinatePoints);
 
   // Sampled Data for Wind Arrows & Interaction Overlay
   // We use the raw segments for interaction to be precise
@@ -241,7 +281,7 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
           })}
 
           {/* Speed Line */}
-          <path d={`M ${points}`} fill="none" stroke="var(--accent-color)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathData} fill="none" stroke="var(--accent-color)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
           {/* Interaction Overlay (Invisible Rects) */}
           {voyage.segments.map((seg, i) => {
