@@ -39,36 +39,106 @@ const calculateBearing = (lat1: number, lng1: number, lat2: number, lng2: number
 // Helper function to get weather for a given time and node
 const getWeatherForTimeAndNode = (
     targetTimeMs: number, // Unix timestamp in ms
-    startNode: Node, // The node we're currently at
-    allNodesInRoute: Node[], // All nodes in the route, for finding closest city if startNode has no forecast
+    currentNode: Node, // The node we're currently at
+    allNodesInRoute: Node[], // All nodes in the route
     weatherMap: RouteForecast, // All weather forecasts
     fallbackBearing: number // For default weather if no forecast at all
 ): { windSpeed: number; windDir: number } => {
 
-    let forecast: HourlyWeather[] | undefined = weatherMap[startNode.id];
-    
-    // If no direct forecast for this node, try to find for an upstream city
-    // This is a simplified search to find *any* relevant forecast.
-    if (!forecast || forecast.length === 0) {
-        // Iterate backwards from startNode's position in allNodesInRoute to find a city with forecast
-        const startIndex = allNodesInRoute.findIndex(n => n.id === startNode.id);
-        for(let i = startIndex; i >= 0; i--) {
-            if (allNodesInRoute[i].isCity && weatherMap[allNodesInRoute[i].id] && weatherMap[allNodesInRoute[i].id].length > 0) {
-                forecast = weatherMap[allNodesInRoute[i].id];
-                break;
-            }
+    const currentIndex = allNodesInRoute.findIndex(n => n.id === currentNode.id);
+    if (currentIndex === -1) return { windSpeed: 5, windDir: (fallbackBearing + 180) % 360 };
+
+    // 1. Find Previous City with Forecast
+    let prevCityNode: Node | null = null;
+    let prevCityIndex = -1;
+    for (let i = currentIndex; i >= 0; i--) {
+        if (allNodesInRoute[i].isCity && weatherMap[allNodesInRoute[i].id]) {
+            prevCityNode = allNodesInRoute[i];
+            prevCityIndex = i;
+            break;
         }
     }
 
-    if (forecast && forecast.length > 0) {
-        const nearest = forecast.reduce((prev, curr) => 
+    // 2. Find Next City with Forecast
+    let nextCityNode: Node | null = null;
+    let nextCityIndex = -1;
+    for (let i = currentIndex + 1; i < allNodesInRoute.length; i++) {
+        if (allNodesInRoute[i].isCity && weatherMap[allNodesInRoute[i].id]) {
+            nextCityNode = allNodesInRoute[i];
+            nextCityIndex = i;
+            break;
+        }
+    }
+
+    // Helper to get forecast at specific time from a forecast array
+    const getForecastAtTime = (forecast: HourlyWeather[]): { windSpeed: number, windDir: number } => {
+        if (!forecast || forecast.length === 0) return { windSpeed: 5, windDir: 0 };
+        return forecast.reduce((prev, curr) => 
             Math.abs(curr.time - targetTimeMs) < Math.abs(prev.time - targetTimeMs) ? curr : prev
         );
-        return { windSpeed: nearest.windSpeed, windDir: nearest.windDir };
-    } else {
-        // Default weather if completely missing
-        return { windSpeed: 5, windDir: (fallbackBearing + 180) % 360 }; 
+    };
+
+    // Case A: No weather data found at all
+    if (!prevCityNode && !nextCityNode) {
+        return { windSpeed: 5, windDir: (fallbackBearing + 180) % 360 };
     }
+
+    // Case B: Only Previous City Found (or we are at the end)
+    if (prevCityNode && !nextCityNode) {
+        return getForecastAtTime(weatherMap[prevCityNode.id]);
+    }
+
+    // Case C: Only Next City Found (start of route before first city?)
+    if (!prevCityNode && nextCityNode) {
+        return getForecastAtTime(weatherMap[nextCityNode.id]);
+    }
+
+    // Case D: Interpolate between Prev and Next
+    if (prevCityNode && nextCityNode) {
+        const weatherStart = getForecastAtTime(weatherMap[prevCityNode.id]);
+        const weatherEnd = getForecastAtTime(weatherMap[nextCityNode.id]);
+
+        // Calculate distances for interpolation
+        // We need distance from PrevCity to CurrentNode, and PrevCity to NextCity
+        // Since we don't have cumulative distance easily available here without re-calculating, 
+        // we can use the node indices as a rough proxy for progress if the nodes are evenly spaced.
+        // BUT, nodes are not evenly spaced. 
+        // Better: Calculate simplified distance summation for the segment.
+        
+        const calcDist = (n1: Node, n2: Node) => {
+             const neighbor = n1.neighbors.find(n => n.nodeId === n2.id);
+             return neighbor ? neighbor.distance : Math.sqrt(Math.pow(n1.lat - n2.lat, 2) + Math.pow(n1.lng - n2.lng, 2)) * 60 * 1.852; // km
+        };
+
+        let distPrevToCurrent = 0;
+        for (let i = prevCityIndex; i < currentIndex; i++) {
+            distPrevToCurrent += calcDist(allNodesInRoute[i], allNodesInRoute[i+1]);
+        }
+
+        let distCurrentToNext = 0;
+        for (let i = currentIndex; i < nextCityIndex; i++) {
+            distCurrentToNext += calcDist(allNodesInRoute[i], allNodesInRoute[i+1]);
+        }
+
+        const totalSegmentDist = distPrevToCurrent + distCurrentToNext;
+        const ratio = totalSegmentDist > 0 ? distPrevToCurrent / totalSegmentDist : 0;
+
+        // Linear Interpolation
+        const windSpeed = weatherStart.windSpeed + (weatherEnd.windSpeed - weatherStart.windSpeed) * ratio;
+        
+        // Angular Interpolation for Wind Dir (Shortest path)
+        let diff = weatherEnd.windDir - weatherStart.windDir;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        
+        let windDir = weatherStart.windDir + diff * ratio;
+        if (windDir < 0) windDir += 360;
+        if (windDir >= 360) windDir -= 360;
+
+        return { windSpeed, windDir };
+    }
+
+    return { windSpeed: 5, windDir: (fallbackBearing + 180) % 360 };
 };
 
 // Physics Simulation

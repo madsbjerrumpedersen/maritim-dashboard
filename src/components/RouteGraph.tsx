@@ -361,7 +361,7 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
                  // Removed isHeadwind and color calculation as arrows are now static gray
                  return (
                   <g key={`wind-${i}`} transform={`translate(${x}, 0)`}>
-                      <text textAnchor="middle" fontSize="8" fill="var(--text-muted)" y="15">{seg.windSpeed}</text>
+                      <text textAnchor="middle" fontSize="8" fill="var(--text-muted)" y="15">{seg.windSpeed.toFixed(1)}</text>
                       {/* Arrow */}
                       <g transform={`translate(0, -10) rotate(${rotation})`}>
                          <path d="M0 -5 L3 3 L0 1 L-3 3 Z" fill="var(--text-muted)" />
