@@ -1,71 +1,26 @@
 import React, { useMemo } from 'react';
 import './DashboardGraphs.css';
 import type { Node } from '../data/maritimeGraph';
+import { type ShipProfile, DEFAULT_SHIP } from '../data/ships';
+import { calculateVoyageProfile } from '../utils/routePhysics';
 
 interface RouteGraphProps {
   nodes: Node[];
+  shipProfile?: ShipProfile;
+  weatherData?: Record<string, { windSpeed: number; windDir: number }>;
 }
 
-const RouteGraph: React.FC<RouteGraphProps> = ({ nodes }) => {
-  const { totalDistanceKm, stops, profile, maxSpeed } = useMemo(() => {
-    if (!nodes || nodes.length < 2) {
-      return { totalDistanceKm: 0, stops: [], profile: [], maxSpeed: 0 };
-    }
-
-    // 1. Calculate cumulative distances for each node (in NM initially)
-    const nodeDistances: { id: string; distKm: number; isCity: boolean }[] = [];
-    let currentDistNm = 0;
-    nodeDistances.push({ id: nodes[0].id, distKm: 0, isCity: nodes[0].isCity });
-
-    for (let i = 0; i < nodes.length - 1; i++) {
-      const current = nodes[i];
-      const next = nodes[i + 1];
-      const neighbor = current.neighbors.find(n => n.nodeId === next.id);
-      // Fallback distance calculation if neighbor link missing
-      const distNm = neighbor ? neighbor.distance : Math.sqrt(Math.pow(current.lat - next.lat, 2) + Math.pow(current.lng - next.lng, 2)) * 60; 
-      currentDistNm += distNm;
-      nodeDistances.push({ id: next.id, distKm: currentDistNm * 1.852, isCity: next.isCity });
-    }
-
-    const totalDistKm = currentDistNm * 1.852;
-    const cityStops = nodeDistances.filter(n => n.isCity);
-
-    // 2. Generate Profile Data (Interpolated points)
-    const pointsCount = 100;
-    const profileData = [];
-    let maxS = 0;
-
-    for (let i = 0; i <= pointsCount; i++) {
-      const dKm = (i / pointsCount) * totalDistKm;
-      
-      // Simulate Speed: Base 18 knots, slow down near start/end, random noise
-      let speed = 18;
-      // Acceleration phase (first 10%)
-      if (dKm < totalDistKm * 0.1) speed = 18 * (dKm / (totalDistKm * 0.1));
-      // Deceleration phase (last 10%)
-      if (dKm > totalDistKm * 0.9) speed = 18 * ((totalDistKm - dKm) / (totalDistKm * 0.1));
-      
-      speed += (Math.random() * 2 - 1); // Noise
-      if (speed < 0) speed = 0;
-      
-      profileData.push({ distKm: dKm, speed });
-      if (speed > maxS) maxS = speed;
-    }
-
-    return {
-      totalDistanceKm: totalDistKm,
-      stops: cityStops,
-      profile: profileData,
-      maxSpeed: Math.ceil(maxS * 1.1) // Add padding
-    };
-  }, [nodes]);
+const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SHIP, weatherData = {} }) => {
+  const voyage = useMemo(() => {
+    return calculateVoyageProfile(nodes, shipProfile, weatherData);
+  }, [nodes, shipProfile, weatherData]);
 
   if (!nodes || nodes.length < 2) {
     return (
       <div className="graph-card" style={{ height: '380px' }}>
         <h3>Ruteanalyse</h3>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-          Planlæg en rute for at se hastighedsanalyse
+          Planlæg en rute for at se detaljeret analyse
         </div>
       </div>
     );
@@ -73,137 +28,143 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes }) => {
 
   // Chart Dimensions
   const width = 800;
-  const height = 280; // Slightly increased height
-  const padding = { top: 20, right: 40, bottom: 60, left: 40 }; // Increased bottom padding for staggered labels
+  const height = 300;
+  const padding = { top: 40, right: 40, bottom: 80, left: 50 };
   const graphWidth = width - padding.left - padding.right;
   const graphHeight = height - padding.top - padding.bottom;
 
-  // Helper to scale values
-  const getX = (distKm: number) => padding.left + (distKm / totalDistanceKm) * graphWidth;
-  const getY_Speed = (s: number) => (height - padding.bottom) - (s / maxSpeed) * graphHeight;
+  const maxSpeedY = Math.max(shipProfile.maxSpeed + 2, ...voyage.segments.map(s => s.speedKnots));
+  const totalDist = voyage.totalDistanceKm;
 
-  // Generate SVG Paths
-  const speedPoints = profile.map(p => `${getX(p.distKm)},${getY_Speed(p.speed)}`).join(' ');
+  // Scales
+  const getX = (dist: number) => padding.left + (dist / totalDist) * graphWidth;
+  const getY = (speed: number) => (height - padding.bottom) - (speed / maxSpeedY) * graphHeight;
 
-  // Colors
-  const speedColor = 'var(--accent-color)';
-  const routeLineColor = 'var(--secondary-color)';
+  // Generate Path
+  const points = voyage.segments.map(s => `${getX(s.distanceKm)},${getY(s.speedKnots)}`).join(' ');
 
-  // Calculate Label Positions (Staggering Logic)
-  const labeledStops = stops.map((stop, index) => {
-    const x = getX(stop.distKm);
-    let level = 0;
-    
-    // Simple staggering: if close to previous, bump level
-    if (index > 0) {
-      const prevX = getX(stops[index - 1].distKm);
-      if (x - prevX < 80) { // 80px threshold
-        level = 1;
-      }
+  // Wind Vectors (Sampled)
+  // We can't show every single segment arrow if there are too many. Sample every N pixels.
+  const windArrows = [];
+  const minArrowSpacing = 40; // px
+  let lastArrowX = -100;
+
+  for (const seg of voyage.segments) {
+    const x = getX(seg.distanceKm);
+    if (x - lastArrowX > minArrowSpacing) {
+       // Determine visual representation
+       // For simplicity in this view, we just show the wind speed as color intensity or length
+       // Ideally we need the Segment Bearing to calculate relative wind rotation for the arrow.
+       // Since we don't have segment bearing easily here (it's inside physics), 
+       // let's just show absolute Wind Direction for now, or simplify.
+       
+       // Simplified: Red/Green dot based on speed?
+       // Let's rely on the speed graph dipping to show headwind.
+       // Here we just show the Wind Speed bar.
+       
+       windArrows.push({
+           x,
+           speed: seg.windSpeed,
+           dir: seg.windDir
+       });
+       lastArrowX = x;
     }
-    
-    // Check if level 1 is also crowded? (Optional: simplistic 2-level toggle for now)
-    // For strictly alternating to avoid overlap, we might need more complex logic, 
-    // but a 2-level stagger covers most "Copenhagen -> Rotterdam" style overlaps.
-    
-    return { ...stop, x, level };
-  });
+  }
+
+  // Format Duration
+  const days = Math.floor(voyage.totalTimeHours / 24);
+  const hours = Math.round(voyage.totalTimeHours % 24);
 
   return (
-    <div className="graph-card" style={{ height: 'auto', minHeight: '380px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-        <h3>Ruteanalyse</h3>
-        <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <div style={{ width: '12px', height: '3px', background: speedColor }}></div>
-            <span>Hastighed (knob)</span>
-          </div>
+    <div className="graph-card" style={{ height: 'auto', minHeight: '420px' }}>
+      {/* Header Stats */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+           <h3 style={{ marginBottom: '0.2rem' }}>Ruteanalyse: {shipProfile.name}</h3>
+           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Total Distance: {Math.round(voyage.totalDistanceKm).toLocaleString()} km
+           </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '2rem' }}>
+            <div className="stat-box">
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Est. Rejsetid</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>
+                    {days}d {hours}t
+                </div>
+            </div>
+            <div className="stat-box">
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total CO2</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff9800' }}>
+                    {(voyage.totalCo2Kg / 1000).toFixed(1)} tons
+                </div>
+            </div>
+             <div className="stat-box">
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Gns. Fart</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>
+                    {voyage.avgSpeedKnots.toFixed(1)} knob
+                </div>
+            </div>
         </div>
       </div>
 
+      {/* Main Chart */}
       <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" className="line-chart-svg">
-          {/* Grid Lines (Horizontal) */}
-          <line x1={padding.left} y1={padding.top} x2={width - padding.right} y2={padding.top} stroke="var(--border-color)" strokeDasharray="4" />
-          <line x1={padding.left} y1={height / 2} x2={width - padding.right} y2={height / 2} stroke="var(--border-color)" strokeDasharray="4" />
           
-          {/* Route Base Line (The "Straight Line") */}
-          <line 
-            x1={padding.left} 
-            y1={height - padding.bottom} 
-            x2={width - padding.right} 
-            y2={height - padding.bottom} 
-            stroke={routeLineColor} 
-            strokeWidth="6" 
-            strokeLinecap="round" 
-            opacity="0.3"
-          />
+          {/* Grid */}
+          <line x1={padding.left} y1={padding.top} x2={width - padding.right} y2={padding.top} stroke="var(--border-color)" strokeDasharray="4" />
+          <line x1={padding.left} y1={height/2} x2={width - padding.right} y2={height/2} stroke="var(--border-color)" strokeDasharray="4" />
+          <line x1={padding.left} y1={height - padding.bottom} x2={width - padding.right} y2={height - padding.bottom} stroke="var(--border-color)" />
 
-          {/* Stops / Vertical Lines & Dots */}
-          {labeledStops.map((stop, i) => {
-             const labelY = height - padding.bottom + 20 + (stop.level * 15); // Stagger by 15px
-             
+          {/* Stops Markers */}
+          {voyage.segments.filter(s => s.isStop).map((stop, i) => {
+             const x = getX(stop.distanceKm);
              return (
-               <g key={stop.id}>
+               <g key={i}>
                  <line 
-                    x1={stop.x} 
+                    x1={x} 
                     y1={padding.top} 
-                    x2={stop.x} 
-                    y2={height - padding.bottom - 5} 
+                    x2={x} 
+                    y2={height - padding.bottom} 
                     stroke="var(--text-muted)" 
                     strokeOpacity="0.2" 
                     strokeDasharray="2" 
                  />
-                 
-                 {/* Extend line for staggered labels */}
-                 {stop.level > 0 && (
-                   <line 
-                      x1={stop.x} 
-                      y1={height - padding.bottom} 
-                      x2={stop.x} 
-                      y2={labelY - 10} 
-                      stroke="var(--text-muted)" 
-                      strokeOpacity="0.2" 
-                   />
-                 )}
-
                  <text 
-                    x={stop.x} 
-                    y={labelY} 
+                    x={x} 
+                    y={height - padding.bottom + 20} 
                     textAnchor="middle" 
                     fill="var(--text-dark)" 
-                    fontSize="10"
-                    fontWeight={i === 0 || i === labeledStops.length - 1 ? 'bold' : 'normal'}
+                    fontSize="10" 
+                    fontWeight="bold"
                  >
-                   {stop.id}
+                   {stop.stopName}
                  </text>
-                 
-                 {/* Dock/Stop Marker */}
-                 <circle 
-                    cx={stop.x} 
-                    cy={height - padding.bottom} 
-                    r="6" 
-                    fill="white" 
-                    stroke={routeLineColor}
-                    strokeWidth="3"
-                 />
+                 <circle cx={x} cy={height - padding.bottom} r="4" fill="var(--text-dark)" />
                </g>
              );
           })}
 
-          {/* Data Lines */}
-          <polyline points={speedPoints} fill="none" stroke={speedColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          
-          {/* Axes Labels */}
-          {/* Left Y-Axis (Speed) */}
-          <text x={padding.left - 5} y={padding.top + 10} textAnchor="end" fontSize="10" fill={speedColor}>{maxSpeed}</text>
-          <text x={padding.left - 5} y={height - padding.bottom - 10} textAnchor="end" fontSize="10" fill={speedColor}>0</text>
-          
+          {/* Speed Line */}
+          <path d={`M ${points}`} fill="none" stroke="var(--accent-color)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* Y Axis Labels */}
+          <text x={padding.left - 10} y={padding.top + 5} textAnchor="end" fontSize="10" fill="var(--text-muted)">{Math.round(maxSpeedY)} kn</text>
+          <text x={padding.left - 10} y={height - padding.bottom} textAnchor="end" fontSize="10" fill="var(--text-muted)">0</text>
+
+          {/* Wind Strip (Simplified) */}
+          <g transform={`translate(0, ${height - 40})`}>
+              {windArrows.map((arrow, i) => (
+                  <g key={i} transform={`translate(${arrow.x}, 0)`}>
+                      <text textAnchor="middle" fontSize="8" fill="var(--text-muted)" y="10">{arrow.speed} m/s</text>
+                      <line x1="0" y1="-5" x2="0" y2="-15" stroke="var(--text-muted)" strokeWidth="1" />
+                  </g>
+              ))}
+              <text x={padding.left} y="25" fontSize="10" fill="var(--text-muted)" fontStyle="italic">Vindstyrke langs ruten (m/s)</text>
+          </g>
+
         </svg>
-      </div>
-      
-      <div style={{ textAlign: 'center', marginTop: '5px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-        Total Distance: {Math.round(totalDistanceKm).toLocaleString()} km
       </div>
     </div>
   );

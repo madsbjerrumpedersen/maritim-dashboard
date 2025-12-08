@@ -5,6 +5,8 @@ Additionally, calculate the route such that we become "Bæredygtige"
 ## Course
 This dashboard is made in a courser called "Green Innovation". The purpose is to make a product, which ...
 
+GreenSeaOptima
+
 1. Integrer med weather app --> 
 
 2. Scroll ned, og så grafer med vejrrute

@@ -1,15 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import './RouteForm.css';
 import { allRoutes } from '../data/seaRoutes';
 import { portRegions } from '../data/ports';
+import { SHIPS, type ShipProfile } from '../data/ships';
 
 // Extract unique port names from the routes you defined
 const uniquePorts = [...new Set(Object.keys(allRoutes).flatMap(key => key.split('-')))];
 
-const RouteForm: React.FC<{ onPlanRoute: (start: string, destination: string) => void }> = ({ onPlanRoute }) => {
+const RouteForm: React.FC<{ 
+  onPlanRoute: (start: string, destination: string) => void;
+  onShipChange: (ship: ShipProfile) => void;
+}> = ({ onPlanRoute, onShipChange }) => {
   const [start, setStart] = useState(uniquePorts[0]);
   const [destination, setDestination] = useState(uniquePorts[1]);
-  const [transportType, setTransportType] = useState('container-ship');
+  
+  // Default to first ship
+  const defaultShipId = Object.keys(SHIPS)[0];
+  const [selectedShipId, setSelectedShipId] = useState(defaultShipId);
+
+  // Notify parent of initial ship selection
+  useEffect(() => {
+    if (SHIPS[defaultShipId]) {
+      onShipChange(SHIPS[defaultShipId]);
+    }
+  }, []);
 
   // Group and sort ports
   const groupedPorts = useMemo(() => {
@@ -60,6 +74,14 @@ const RouteForm: React.FC<{ onPlanRoute: (start: string, destination: string) =>
     if (newStart === destination) {
       const newDest = uniquePorts.find(p => p !== newStart);
       if (newDest) setDestination(newDest);
+    }
+  };
+
+  const handleShipChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newShipId = e.target.value;
+    setSelectedShipId(newShipId);
+    if (SHIPS[newShipId]) {
+      onShipChange(SHIPS[newShipId]);
     }
   };
 
@@ -115,14 +137,13 @@ const RouteForm: React.FC<{ onPlanRoute: (start: string, destination: string) =>
           <div className="custom-select-wrapper">
             <select
               id="transportType"
-              value={transportType}
-              onChange={(e) => setTransportType(e.target.value)}
+              value={selectedShipId}
+              onChange={handleShipChange}
               className="form-control"
             >
-              <option value="container-ship">Containerskib</option>
-              <option value="tanker">Tankskib</option>
-              <option value="bulk-carrier">Bulkskib</option>
-              <option value="ro-ro-ship">Ro-Ro skib</option>
+              {Object.values(SHIPS).map(ship => (
+                <option key={ship.id} value={ship.id}>{ship.name}</option>
+              ))}
             </select>
             <ChevronDown />
           </div>

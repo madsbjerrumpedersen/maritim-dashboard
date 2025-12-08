@@ -7,10 +7,14 @@ import WeatherGraph from './components/WeatherGraph';
 import RouteGraph from './components/RouteGraph';
 import { getSeaRoute } from './data/seaRoutes';
 import { type Node } from './data/maritimeGraph';
+import { type ShipProfile, DEFAULT_SHIP } from './data/ships';
+import { fetchRouteWeather } from './data/weatherService';
 
 function App() {
   const [route, setRoute] = useState<[number, number][]>([]);
   const [routeNodes, setRouteNodes] = useState<Node[]>([]);
+  const [selectedShip, setSelectedShip] = useState<ShipProfile>(DEFAULT_SHIP);
+  const [weatherData, setWeatherData] = useState<Record<string, { windSpeed: number; windDir: number }>>({});
   const [startPort, setStartPort] = useState<string>('');
   const [currentPath, setCurrentPath] = useState(window.location.hash);
 
@@ -20,12 +24,22 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const handlePlanRoute = (start: string, destination: string) => {
+  const handlePlanRoute = async (start: string, destination: string) => {
     setStartPort(start);
+    setWeatherData({}); // Reset weather
+    
     const result = getSeaRoute(start, destination);
     if (result) {
       setRoute(result.coordinates);
       setRouteNodes(result.nodes);
+      
+      // Fetch weather for the route
+      try {
+        const weather = await fetchRouteWeather(result.nodes);
+        setWeatherData(weather);
+      } catch (err) {
+        console.error("Failed to fetch route weather", err);
+      }
     } else {
       setRoute([]); 
       setRouteNodes([]);
@@ -47,7 +61,7 @@ function App() {
           <span className="logo-text">MaritimNav</span>
         </div>
         <div className="sidebar-content">
-          <RouteForm onPlanRoute={handlePlanRoute} />
+          <RouteForm onPlanRoute={handlePlanRoute} onShipChange={setSelectedShip} />
         </div>
       </aside>
       <main className="main-content">
@@ -59,7 +73,7 @@ function App() {
             <WeatherGraph locationName={startPort} />
           </div>
           <div style={{ marginTop: '1rem' }}>
-            <RouteGraph nodes={routeNodes} />
+            <RouteGraph nodes={routeNodes} shipProfile={selectedShip} weatherData={weatherData} />
           </div>
         </div>
       </main>
