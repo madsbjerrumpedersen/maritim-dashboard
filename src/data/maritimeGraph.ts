@@ -323,9 +323,9 @@
 
       neighbors: [
 
-        { nodeId: "WP_GoodHope_Sydney_0", distance: 3099.75 },
-
         { nodeId: "node_1764702149846", distance: 62 },
+
+        { nodeId: "node_1765226040782", distance: 1326 },
 
       ]
 
@@ -454,6 +454,8 @@
         { nodeId: "WP_Malacca_North_SriLanka_South_0", distance: 416.8 },
 
         { nodeId: "WP_Malacca_North_Singapore_West_0", distance: 188.61 },
+
+        { nodeId: "WP_GoodHope_SriLanka_South_0", distance: 3084 },
 
       ]
 
@@ -1025,6 +1027,8 @@
 
         { nodeId: "WP_BabElMandeb_SriLanka_South_1", distance: 1090.28 },
 
+        { nodeId: "WP_GoodHope_SriLanka_South_0", distance: 1925 },
+
       ]
 
     },
@@ -1046,6 +1050,8 @@
         { nodeId: "SriLanka_South", distance: 622.84 },
 
         { nodeId: "WP_Dubai_SriLanka_South_0", distance: 959 },
+
+        { nodeId: "WP_GoodHope_SriLanka_South_0", distance: 2016 },
 
       ]
 
@@ -1507,15 +1513,23 @@
 
       id: "WP_GoodHope_SriLanka_South_0",
 
-      lat: -20,
+      lat: -20.22103149153378,
 
-      lng: 50,
+      lng: 51.50390625000001,
 
       isCity: false,
 
       neighbors: [
 
         { nodeId: "SriLanka_South", distance: 2328.09 },
+
+        { nodeId: "Malacca_North", distance: 3084 },
+
+        { nodeId: "WP_BabElMandeb_SriLanka_South_0", distance: 1925 },
+
+        { nodeId: "WP_BabElMandeb_SriLanka_South_1", distance: 2016 },
+
+        { nodeId: "node_1765226153979", distance: 426 },
 
       ]
 
@@ -1533,9 +1547,11 @@
 
       neighbors: [
 
-        { nodeId: "GoodHope", distance: 3099.75 },
-
         { nodeId: "WP_GoodHope_Sydney_1", distance: 1838.74 },
+
+        { nodeId: "node_1765226040782", distance: 1598 },
+
+        { nodeId: "node_1765226153979", distance: 1796 },
 
       ]
 
@@ -2310,6 +2326,50 @@
         { nodeId: "node_1765217417416", distance: 488 },
 
         { nodeId: "LuzonStrait", distance: 1979 },
+
+      ]
+
+    },
+
+    "node_1765226040782": {
+
+      id: "node_1765226040782",
+
+      lat: -36.10229157826991,
+
+      lng: 27.861328125,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "GoodHope", distance: 1326 },
+
+        { nodeId: "WP_GoodHope_Sydney_0", distance: 1598 },
+
+        { nodeId: "node_1765226153979", distance: 1172 },
+
+      ]
+
+    },
+
+    "node_1765226153979": {
+
+      id: "node_1765226153979",
+
+      lat: -26.46486720045001,
+
+      lng: 47.81250000000001,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "node_1765226040782", distance: 1172 },
+
+        { nodeId: "WP_GoodHope_SriLanka_South_0", distance: 426 },
+
+        { nodeId: "WP_GoodHope_Sydney_0", distance: 1796 },
 
       ]
 
