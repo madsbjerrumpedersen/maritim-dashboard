@@ -58,19 +58,92 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
   const stops = voyage.segments.filter(s => s.isStop);
 
   // Time Markers (Timeline at top)
-  const timeMarkers: { x: number; label: string }[] = [];
-  let lastDay = 0;
+  // Helper to format date
+  const formatDate = (ms: number) => new Date(ms).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }).replace('.', '');
+
+  // Helper to interpolate distance at a specific time
+  const getDistanceAtTime = (targetHours: number, segments: VoyagePoint[]): number => {
+      if (segments.length === 0) return 0;
+      if (targetHours <= 0) return 0;
+      if (targetHours >= segments[segments.length - 1].timeHours) return segments[segments.length - 1].distanceKm;
+
+      // Binary search or simple find (segments are sorted by time)
+      // Simple loop is fine for <1000 segments usually, but binary is better. 
+      // Let's do simple find for safety/simplicity in this context.
+      const index = segments.findIndex(s => s.timeHours >= targetHours);
+      if (index === -1) return segments[segments.length - 1].distanceKm;
+      if (index === 0) return segments[0].distanceKm;
+
+      const p1 = segments[index - 1];
+      const p2 = segments[index];
+      
+      const fraction = (targetHours - p1.timeHours) / (p2.timeHours - p1.timeHours);
+      return p1.distanceKm + fraction * (p2.distanceKm - p1.distanceKm);
+  };
+
+  const allMarkers: { distance: number; label: string }[] = [];
+  const startMs = startTime;
+  const totalHours = voyage.totalTimeHours;
+  const totalDays = totalHours / 24;
   
-  voyage.segments.forEach(seg => {
-    const currentDay = Math.floor(seg.timeHours / 24);
-    if (currentDay > lastDay) {
-        timeMarkers.push({
-            x: getX(seg.distanceKm),
-            label: `Dag ${currentDay + 1}`
-        });
-        lastDay = currentDay;
-    }
-  });
+  // Determine step size (in days) to have max 10 markers
+  // We want nice steps if possible? 1, 2, 3, 4, 5...
+  let stepDays = 1;
+  while (totalDays / stepDays > 10) {
+      stepDays++;
+  }
+
+  // Find first midnight
+  const startDate = new Date(startMs);
+  // Set to next midnight
+  const firstMidnight = new Date(startDate);
+  firstMidnight.setHours(24, 0, 0, 0); // Effectively 00:00 of next day
+
+  let currentMarkerDate = firstMidnight;
+  
+  while (currentMarkerDate.getTime() < startMs + totalHours * 3600 * 1000) {
+      const diffMs = currentMarkerDate.getTime() - startMs;
+      const diffHours = diffMs / (1000 * 3600);
+      
+      const dist = getDistanceAtTime(diffHours, voyage.segments);
+      
+      allMarkers.push({
+          distance: dist,
+          label: formatDate(currentMarkerDate.getTime())
+      });
+
+      // Advance by stepDays
+      currentMarkerDate = new Date(currentMarkerDate.getTime() + stepDays * 24 * 3600 * 1000);
+  }
+
+  const timeMarkers = allMarkers.map(m => ({
+      x: getX(m.distance),
+      label: m.label
+  }));
+
+  // Calculate Stop Layout (Collision Avoidance)
+  const stopsWithLayout = stops.map(stop => ({
+      ...stop,
+      x: getX(stop.distanceKm),
+      yOffset: 0
+  }));
+
+  // Simple collision detection for labels
+  for (let i = 1; i < stopsWithLayout.length; i++) {
+      const prev = stopsWithLayout[i-1];
+      const curr = stopsWithLayout[i];
+      
+      // If labels are too close (assuming approx 40px width/spacing needed)
+      if (curr.x - prev.x < 40) {
+          // If previous was standard (0), make this one offset (15)
+          // If previous was offset (15), make this one standard (0) - actually, better to just alternate levels
+          if (prev.yOffset === 0) {
+              curr.yOffset = 15;
+          } else {
+              curr.yOffset = 0;
+          }
+      }
+  }
 
   return (
     <div className="graph-card" style={{ height: 'auto', minHeight: '420px', position: 'relative' }}>
@@ -150,10 +223,6 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
              />
              <text x={padding.left} y={padding.top - 25} fontSize="9" fill="var(--text-muted)" fontWeight="bold">Tidslinje</text>
              
-             {/* Start Label */}
-             <text x={padding.left} y={padding.top - 5} fontSize="9" fill="var(--text-muted)" textAnchor="middle">Start</text>
-             <line x1={padding.left} y1={padding.top - 15} x2={padding.left} y2={padding.top - 10} stroke="var(--border-color)" />
-
              {/* Day Markers */}
              {timeMarkers.map((tm, i) => (
                  <g key={`tm-${i}`}>
@@ -164,22 +233,22 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
           </g>
 
           {/* Stops Markers */}
-          {stops.map((stop, i) => {
-             const x = getX(stop.distanceKm);
+          {stopsWithLayout.map((stop, i) => {
+             const { x, yOffset } = stop;
              return (
                <g key={i}>
                  <line 
                     x1={x} 
                     y1={padding.top} 
                     x2={x} 
-                    y2={height - padding.bottom} 
+                    y2={height - padding.bottom + yOffset} // Extend line if label is lower
                     stroke="var(--text-muted)" 
                     strokeOpacity="0.2" 
                     strokeDasharray="2" 
                  />
                  <text 
                     x={x} 
-                    y={height - padding.bottom + 20} 
+                    y={height - padding.bottom + 20 + yOffset} 
                     textAnchor="middle" 
                     fill="var(--text-dark)" 
                     fontSize="10" 

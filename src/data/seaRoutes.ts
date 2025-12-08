@@ -26,25 +26,63 @@ ports.forEach(p1 => {
   });
 });
 
+function deg2rad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export const getSeaRoute = (start: string, destination: string): RouteResult | null => {
   // Use the new graph-based pathfinding
   const pathNodes = findShortestPath(start, destination);
   
-  if (pathNodes) {
-    const coordinates = pathNodes.map(node => [node.lat, node.lng] as [number, number]);
-    // Ensure the specific start/end coordinates from ports.ts are used exactly at the ends
-    // (The graph uses them, but good to be explicit if graph has slight deviations)
-    const startCoord = portCoordinates[start];
-    const endCoord = portCoordinates[destination];
-    
-    if (startCoord && endCoord) {
-        // We could overwrite the first and last coordinates here if we wanted strict equality
-        // with portCoordinates, but the graph nodes should be consistent.
+  if (pathNodes && pathNodes.length > 0) {
+    const highResNodes: Node[] = [];
+    const MAX_SEGMENT_KM = 25; // Target max distance between points
+
+    for (let i = 0; i < pathNodes.length - 1; i++) {
+        const current = pathNodes[i];
+        const next = pathNodes[i+1];
+        
+        highResNodes.push(current);
+
+        const dist = haversineDistance(current.lat, current.lng, next.lat, next.lng);
+        
+        if (dist > MAX_SEGMENT_KM) {
+            const numSteps = Math.ceil(dist / MAX_SEGMENT_KM);
+            for (let k = 1; k < numSteps; k++) {
+                const fraction = k / numSteps;
+                const lat = current.lat + (next.lat - current.lat) * fraction;
+                const lng = current.lng + (next.lng - current.lng) * fraction;
+                
+                highResNodes.push({
+                    id: `interpolated_${current.id}_${k}`,
+                    lat,
+                    lng,
+                    isCity: false,
+                    neighbors: [] 
+                });
+            }
+        }
     }
+    // Add the last node
+    highResNodes.push(pathNodes[pathNodes.length - 1]);
+
+    const coordinates = highResNodes.map(node => [node.lat, node.lng] as [number, number]);
     
     return {
         coordinates,
-        nodes: pathNodes
+        nodes: highResNodes
     };
   }
 
