@@ -4,6 +4,7 @@ import type { Node } from '../data/maritimeGraph';
 import { type ShipProfile, DEFAULT_SHIP } from '../data/ships';
 import { calculateVoyageProfile, type VoyagePoint } from '../utils/routePhysics';
 import type { RouteForecast } from '../data/weatherService';
+import OptimizationStats from './OptimizationStats';
 
 interface RouteGraphProps {
   nodes: Node[];
@@ -20,6 +21,11 @@ const OptimizedRouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = D
   const voyage = useMemo(() => {
     return calculateVoyageProfile(nodes, shipProfile, weatherData, startTime, optimization);
   }, [nodes, shipProfile, weatherData, startTime, optimization]);
+
+  // Baseline Calculation (Optimization = 0, Max Speed Priority)
+  const baselineVoyage = useMemo(() => {
+    return calculateVoyageProfile(nodes, shipProfile, weatherData, startTime, 0);
+  }, [nodes, shipProfile, weatherData, startTime]);
 
   if (!nodes || nodes.length < 2) {
     return (
@@ -420,6 +426,13 @@ const OptimizedRouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = D
               Optimering: {Math.round(optimization * 100)}%
           </div>
       </div>
+      
+      {/* Economic Stats */}
+      <OptimizationStats 
+        currentVoyage={voyage} 
+        baselineVoyage={baselineVoyage} 
+        shipProfile={shipProfile} 
+      />
     </div>
   );
 };
