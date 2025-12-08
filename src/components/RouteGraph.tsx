@@ -162,28 +162,33 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
   }));
 
   // Calculate Stop Layout (Collision Avoidance)
-  const stopsWithLayout = stops.map(stop => ({
+  const stopsWithLayoutRaw = stops.map(stop => ({
       ...stop,
       x: getX(stop.distanceKm),
       yOffset: 0
   }));
 
-  // Simple collision detection for labels
-  for (let i = 1; i < stopsWithLayout.length; i++) {
-      const prev = stopsWithLayout[i-1];
-      const curr = stopsWithLayout[i];
-      
-      // If labels are too close (assuming approx 40px width/spacing needed)
-      if (curr.x - prev.x < 40) {
-          // If previous was standard (0), make this one offset (15)
-          // If previous was offset (15), make this one standard (0) - actually, better to just alternate levels
-          if (prev.yOffset === 0) {
-              curr.yOffset = 15;
-          } else {
-              curr.yOffset = 0;
+  // Collision detection with multiple levels
+  const levels = [0, 15, 30];
+  const lastXByLevel = [-1000, -1000, -1000];
+
+  const stopsWithLayout = stopsWithLayoutRaw.map(stop => {
+      const spacing = 70; // Text width estimate
+      let level = 0;
+      for(let k=0; k<levels.length; k++) {
+          if (stop.x - lastXByLevel[k] > spacing) {
+              level = k;
+              break;
+          }
+          // Fallback: if all blocked, pick the one with max distance, or just cycle.
+          // Simple fallback: use the last level if we run out.
+          if (k === levels.length - 1) {
+               level = k;
           }
       }
-  }
+      lastXByLevel[level] = stop.x;
+      return { ...stop, yOffset: levels[level] };
+  });
 
   return (
     <div className="graph-card" style={{ height: 'auto', minHeight: '420px', position: 'relative' }}>

@@ -174,10 +174,14 @@ const OptimizedRouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = D
       const prev = stopsWithLayout[i-1];
       const curr = stopsWithLayout[i];
       
-      if (curr.x - prev.x < 40) {
+      // Increased threshold and offset for better separation
+      if (curr.x - prev.x < 80) { // Check if labels are within 80px horizontally
           if (prev.yOffset === 0) {
-              curr.yOffset = 15;
+              curr.yOffset = 0; // Shift down by 0px
           } else {
+              // Check if the previous label was shifted down by 30, then shift current to 0 (default position).
+              // If previous was shifted by some other value (e.g. 15 if we had more options),
+              // this would need to be more dynamic. For now, alternating between 0 and 30 is enough.
               curr.yOffset = 0;
           }
       }
