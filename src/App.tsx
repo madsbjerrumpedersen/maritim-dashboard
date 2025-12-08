@@ -5,6 +5,7 @@ import RouteForm from './components/RouteForm';
 import NodeEditor from './components/NodeEditor';
 import WeatherGraph from './components/WeatherGraph';
 import RouteGraph from './components/RouteGraph';
+import OptimizedRouteGraph from './components/OptimizedRouteGraph';
 import { getSeaRoute } from './data/seaRoutes';
 import { type Node } from './data/maritimeGraph';
 import { type ShipProfile, DEFAULT_SHIP } from './data/ships';
@@ -80,6 +81,14 @@ function App() {
           </div>
           <div style={{ marginTop: '1rem' }}>
             <RouteGraph 
+              nodes={routeNodes} 
+              shipProfile={selectedShip} 
+              weatherData={weatherData} 
+              startTime={startTime}
+            />
+          </div>
+          <div style={{ marginTop: '2rem' }}>
+            <OptimizedRouteGraph 
               nodes={routeNodes} 
               shipProfile={selectedShip} 
               weatherData={weatherData} 

@@ -13,6 +13,7 @@ export interface VoyagePoint {
   stopName?: string;
   segmentBearing: number;
   speedPenalty: number;
+  windFactor: number; // -1 (Tail) to 1 (Head)
 }
 
 export interface VoyageSummary {
@@ -75,7 +76,8 @@ export const calculateVoyageProfile = (
   nodes: Node[],
   ship: ShipProfile,
   weatherMap: RouteForecast, // Keyed by stop ID (or closest stop)
-  startTime: number = Date.now()
+  startTime: number = Date.now(),
+  optimizationPreference: number = 0 // 0 = Standard/Fast, 1 = Max Efficiency
 ): VoyageSummary => {
   if (nodes.length < 2) {
     return {
@@ -106,8 +108,14 @@ export const calculateVoyageProfile = (
     isStop: true,
     stopName: nodes[0].id,
     segmentBearing: 0,
-    speedPenalty: 0
+    speedPenalty: 0,
+    windFactor: 0
   });
+
+  // Base consumption rate at cruise speed (kg/hour)
+  // fuelConsumptionAtCruise is kg/nm. 
+  // Rate (kg/h) = kg/nm * nm/h = kg/nm * cruiseSpeed
+  const baseKgPerHour = ship.fuelConsumptionAtCruise * ship.cruiseSpeed;
 
   // Iterate route segments
   for (let i = 0; i < nodes.length - 1; i++) {
@@ -129,10 +137,26 @@ export const calculateVoyageProfile = (
     const relativeAngleRad = toRad(Math.abs(weather.windDir - bearing));
     const windFactor = Math.cos(relativeAngleRad); // 1 = Headwind (bad), -1 = Tailwind (good)
     
+    // Calculate Optimized Target Speed
+    // Strategy: If optimizationPreference is high, we drop speed.
+    // If Headwind (windFactor > 0) AND optimization is high, we drop speed MORE to avoid fighting resistance.
+    
+    const ecoSpeed = ship.cruiseSpeed * 0.7; // 70% speed is roughly half fuel? (0.7^3 = 0.34)
+    // Interpolate base target based on preference
+    let targetSpeed = ship.cruiseSpeed - (ship.cruiseSpeed - ecoSpeed) * optimizationPreference;
+    
+    // Dynamic adjustment for wind (Optimization logic)
+    if (optimizationPreference > 0 && windFactor > 0.2) {
+        // In headwind, slow down further
+        // Max slowdown additional 15% at full preference and full headwind
+        const slowdown = 0.15 * optimizationPreference * windFactor;
+        targetSpeed = targetSpeed * (1 - slowdown);
+    }
+
     const windSpeedKnots = weather.windSpeed * 1.94;
     const speedPenalty = windSpeedKnots * windFactor * ship.windage;
     
-    let actualSpeed = ship.cruiseSpeed - speedPenalty;
+    let actualSpeed = targetSpeed - speedPenalty;
     
     // Clamp limits
     if (actualSpeed > ship.maxSpeed) actualSpeed = ship.maxSpeed;
@@ -142,7 +166,21 @@ export const calculateVoyageProfile = (
     const timeHours = distNm / actualSpeed;
     
     const resistanceFactor = Math.max(0, windFactor * 0.15); // Only headwind costs extra fuel
-    const segmentFuel = (distNm * ship.fuelConsumptionAtCruise) * (1 + resistanceFactor);
+    
+    // Updated Fuel Model: Cubic relation to speed
+    // Current Rate = BaseRate * (Speed / Cruise)^3
+    // This strongly rewards slowing down.
+    const speedRatio = actualSpeed / ship.cruiseSpeed;
+    const currentKgPerHour = baseKgPerHour * Math.pow(speedRatio, 3);
+    
+    // Apply resistance factor to the BURN RATE (fighting wind needs more power for same speed)
+    // Actually, physics: Power ~ Speed^3 + Resistance.
+    // We already reduced speed due to penalty.
+    // The engine is working to maintain 'actualSpeed'.
+    // If we are fighting headwind, we are working harder than just for calm water at 'actualSpeed'.
+    // Simple model: Rate * (1 + resistance)
+    
+    const segmentFuel = (currentKgPerHour * timeHours) * (1 + resistanceFactor);
 
     // Accumulate
     totalDistNm += distNm;
@@ -160,7 +198,8 @@ export const calculateVoyageProfile = (
       isStop: end.isCity,
       stopName: end.isCity ? end.id : undefined,
       segmentBearing: bearing,
-      speedPenalty: Number(speedPenalty.toFixed(1))
+      speedPenalty: Number(speedPenalty.toFixed(1)),
+      windFactor
     });
   }
 
