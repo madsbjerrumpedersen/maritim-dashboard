@@ -116,6 +116,45 @@ const OptimizationStats: React.FC<OptimizationStatsProps> = ({ currentVoyage, ba
             </div>
 
         </div>
+
+        <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: 'var(--text-dark)' }}>Miljøpåvirkning</h4>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            
+            {/* Baseline CO2 */}
+            <div className="stat-card" style={{ background: 'white', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Standard Udledning</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>
+                    {(baselineVoyage.totalCo2Kg / 1000).toFixed(1)} tons
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                    Ved fuld fart ({shipProfile.cruiseSpeed} kn)
+                </div>
+            </div>
+
+            {/* Optimized CO2 */}
+            <div className="stat-card" style={{ background: 'white', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Optimeret Udledning</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2f9e44' }}>
+                    {(currentVoyage.totalCo2Kg / 1000).toFixed(1)} tons
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                    Faktisk udledning
+                </div>
+            </div>
+
+            {/* Reduction */}
+            <div className="stat-card" style={{ background: 'white', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>CO2 Reduktion</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#2f9e44' }}>
+                    {co2DiffTons.toFixed(1)} tons
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#2f9e44' }}>
+                    {baselineVoyage.totalCo2Kg > 0 ? ((co2DiffKg / baselineVoyage.totalCo2Kg) * 100).toFixed(1) : 0}% reduktion
+                </div>
+            </div>
+
+        </div>
     </div>
   );
 };

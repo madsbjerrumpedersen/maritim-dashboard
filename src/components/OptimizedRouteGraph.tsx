@@ -409,6 +409,22 @@ const OptimizedRouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = D
 
       {/* Optimization Control Slider */}
       <div style={{ padding: '0 2rem', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          {/* Wind Zone Legend */}
+          <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '1.5rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '12px', height: '12px', backgroundColor: '#51cf66', borderRadius: '2px', opacity: 0.5 }}></div>
+                  <span>Medvind</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '12px', height: '12px', backgroundColor: '#ffd43b', borderRadius: '2px', opacity: 0.5 }}></div>
+                  <span>Sidevind</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '12px', height: '12px', backgroundColor: '#ff6b6b', borderRadius: '2px', opacity: 0.5 }}></div>
+                  <span>Modvind</span>
+              </div>
+          </div>
+          
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontWeight: 600 }}>
               <span style={{ color: '#228be6' }}>Prioritér Fart</span>
               <span style={{ color: '#82c91e' }}>Prioritér CO2 (Brændstof)</span>
