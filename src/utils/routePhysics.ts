@@ -35,6 +35,41 @@ const calculateBearing = (lat1: number, lng1: number, lat2: number, lng2: number
   return (brng + 360) % 360;
 };
 
+// Helper function to get weather for a given time and node
+const getWeatherForTimeAndNode = (
+    targetTimeMs: number, // Unix timestamp in ms
+    startNode: Node, // The node we're currently at
+    allNodesInRoute: Node[], // All nodes in the route, for finding closest city if startNode has no forecast
+    weatherMap: RouteForecast, // All weather forecasts
+    fallbackBearing: number // For default weather if no forecast at all
+): { windSpeed: number; windDir: number } => {
+
+    let forecast: HourlyWeather[] | undefined = weatherMap[startNode.id];
+    
+    // If no direct forecast for this node, try to find for an upstream city
+    // This is a simplified search to find *any* relevant forecast.
+    if (!forecast || forecast.length === 0) {
+        // Iterate backwards from startNode's position in allNodesInRoute to find a city with forecast
+        const startIndex = allNodesInRoute.findIndex(n => n.id === startNode.id);
+        for(let i = startIndex; i >= 0; i--) {
+            if (allNodesInRoute[i].isCity && weatherMap[allNodesInRoute[i].id] && weatherMap[allNodesInRoute[i].id].length > 0) {
+                forecast = weatherMap[allNodesInRoute[i].id];
+                break;
+            }
+        }
+    }
+
+    if (forecast && forecast.length > 0) {
+        const nearest = forecast.reduce((prev, curr) => 
+            Math.abs(curr.time - targetTimeMs) < Math.abs(prev.time - targetTimeMs) ? curr : prev
+        );
+        return { windSpeed: nearest.windSpeed, windDir: nearest.windDir };
+    } else {
+        // Default weather if completely missing
+        return { windSpeed: 5, windDir: (fallbackBearing + 180) % 360 }; 
+    }
+};
+
 // Physics Simulation
 export const calculateVoyageProfile = (
   nodes: Node[],
@@ -57,14 +92,17 @@ export const calculateVoyageProfile = (
   let totalTimeHours = 0;
   let totalFuelKg = 0;
   
+  // Get initial weather for the start point
+  const initialWeather = getWeatherForTimeAndNode(startTime, nodes[0], nodes, weatherMap, 0); // bearing 0 is placeholder for initial point
+
   // Initial point
   segments.push({
     distanceKm: 0,
     timeHours: 0,
     speedKnots: ship.cruiseSpeed, // Start at cruise speed (simplification for graph visuals)
     co2Kg: 0,
-    windSpeed: 0,
-    windDir: 0,
+    windSpeed: initialWeather.windSpeed,
+    windDir: initialWeather.windDir,
     isStop: true,
     stopName: nodes[0].id,
     segmentBearing: 0,
@@ -85,59 +123,15 @@ export const calculateVoyageProfile = (
 
     // 2. Determine Weather for this segment at CURRENT TRIP TIME
     const currentTripTime = startTime + (totalTimeHours * 3600 * 1000);
-    
-    // Find relevant forecast array
-    let forecast: HourlyWeather[] | undefined = weatherMap[start.id];
-    if (!forecast) {
-       // Find last known city
-       for(let j=i; j>=0; j--) {
-           if (nodes[j].isCity && weatherMap[nodes[j].id]) {
-               forecast = weatherMap[nodes[j].id];
-               break;
-           }
-       }
-    }
-
-    let weather: { windSpeed: number; windDir: number };
-    
-    if (forecast && forecast.length > 0) {
-        // Find nearest hour
-        // Optimization: Assuming forecast is sorted by time.
-        // Simple search:
-        const nearest = forecast.reduce((prev, curr) => 
-            Math.abs(curr.time - currentTripTime) < Math.abs(prev.time - currentTripTime) ? curr : prev
-        );
-        weather = { windSpeed: nearest.windSpeed, windDir: nearest.windDir };
-    } else {
-        // Default weather if completely missing
-        weather = { windSpeed: 5, windDir: (bearing + 180) % 360 }; 
-    }
+    const weather = getWeatherForTimeAndNode(currentTripTime, end, nodes, weatherMap, bearing); // Use 'end' node for weather lookup of the segment
 
     // 3. Physics Calculation (Wind Impact)
-    // Relative Wind Angle: 0 = Tailwind, 180 = Headwind
-    // Wind Direction is "Coming From". 
-    // If Ship goes 90 deg (East) and Wind is 90 deg (East wind, coming from East), that is Headwind.
-    // Relative Angle = abs(WindDir - ShipHeading)
-    // Ideally: cos(180) = -1 (Headwind), cos(0) = 1 (Tailwind)
-    
-    // We want the angle relative to the bow.
-    // AngleOfAttack = WindDir - ShipHeading.
-    // Cos(AngleOfAttack):
-    // Wind 90, Ship 90 -> Angle 0 -> Cos(0)=1. This implies Tailwind? 
-    // Wait. "Wind from East (90)" hitting "Ship going East (90)" is Headwind.
-    // So 0 deg difference = Headwind. 180 deg difference = Tailwind.
-    // Let's invert the logic factor.
-    
     const relativeAngleRad = toRad(Math.abs(weather.windDir - bearing));
     const windFactor = Math.cos(relativeAngleRad); // 1 = Headwind (bad), -1 = Tailwind (good)
     
-    // Impact: Headwind (1) slows down. Tailwind (-1) speeds up.
-    // Formula: Impact = WindSpeed(knots) * Factor * ShipWindage
-    // Note: WindSpeed input is m/s. 1 m/s ~= 2 knots.
     const windSpeedKnots = weather.windSpeed * 1.94;
     const speedPenalty = windSpeedKnots * windFactor * ship.windage;
     
-    // Calculate Final Speed
     let actualSpeed = ship.cruiseSpeed - speedPenalty;
     
     // Clamp limits
@@ -147,13 +141,6 @@ export const calculateVoyageProfile = (
     // 4. Time & Fuel
     const timeHours = distNm / actualSpeed;
     
-    // Fuel Burn: 
-    // Base burn * distance
-    // Plus extra burn for fighting resistance? 
-    // Simplified: Burn is constant per hour at cruise? Or per mile?
-    // Let's model: Consumption increases with resistance.
-    // Effective Distance = Distance * (1 + ResistanceFactor)
-    // ResistanceFactor ~= windFactor * 0.1 (10% fuel penalty for full headwind)
     const resistanceFactor = Math.max(0, windFactor * 0.15); // Only headwind costs extra fuel
     const segmentFuel = (distNm * ship.fuelConsumptionAtCruise) * (1 + resistanceFactor);
 

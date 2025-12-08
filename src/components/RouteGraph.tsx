@@ -182,29 +182,8 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
       <div style={{ position: 'relative', width: '100%' }}>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" className="line-chart-svg">
           
-          {/* Slow Zones (Background) */}
-          {voyage.segments.map((seg, i) => {
-             if (i === 0) return null;
-             const prev = voyage.segments[i-1];
-             // If significantly slower than cruise speed
-             if (seg.speedKnots < shipProfile.cruiseSpeed * 0.9) {
-                 const x1 = getX(prev.distanceKm);
-                 const x2 = getX(seg.distanceKm);
-                 return (
-                    <rect 
-                        key={`slow-${i}`}
-                        x={x1} 
-                        y={padding.top} 
-                        width={Math.max(1, x2 - x1)} 
-                        height={height - padding.bottom - padding.top} 
-                        fill="#ff0000" 
-                        opacity="0.05"
-                    />
-                 );
-             }
-             return null;
-          })}
-
+          {/* Slow Zones (Background) - REMOVED */}
+          
           {/* Grid */}
           <line x1={padding.left} y1={padding.top} x2={width - padding.right} y2={padding.top} stroke="var(--border-color)" strokeDasharray="4" />
           <line x1={padding.left} y1={height/2} x2={width - padding.right} y2={height/2} stroke="var(--border-color)" strokeDasharray="4" />
@@ -339,15 +318,13 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
                  
                  const rotation = relative + 90;
                  
-                 const isHeadwind = Math.abs(relative - 180) < 90;
-                 const color = isHeadwind ? '#ff6b6b' : '#51cf66'; // Red or Green
-                 
+                 // Removed isHeadwind and color calculation as arrows are now static gray
                  return (
                   <g key={`wind-${i}`} transform={`translate(${x}, 0)`}>
                       <text textAnchor="middle" fontSize="8" fill="var(--text-muted)" y="15">{seg.windSpeed}</text>
                       {/* Arrow */}
                       <g transform={`translate(0, -10) rotate(${rotation})`}>
-                         <path d="M0 -5 L3 3 L0 1 L-3 3 Z" fill={color} />
+                         <path d="M0 -5 L3 3 L0 1 L-3 3 Z" fill="var(--text-muted)" />
                       </g>
                   </g>
                  );
@@ -387,11 +364,6 @@ const RouteGraph: React.FC<RouteGraphProps> = ({ nodes, shipProfile = DEFAULT_SH
                     <span>Vind:</span>
                     <span>{hoverPoint.windSpeed} m/s</span>
                 </div>
-                {hoverPoint.speedPenalty > 0.5 && (
-                    <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #eee', color: '#ff6b6b' }}>
-                        ⚠️ Tab: {hoverPoint.speedPenalty} kn
-                    </div>
-                )}
             </div>
         )}
       </div>
