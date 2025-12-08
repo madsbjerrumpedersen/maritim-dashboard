@@ -4,11 +4,13 @@ import Map from './components/Map';
 import RouteForm from './components/RouteForm';
 import NodeEditor from './components/NodeEditor';
 import WeatherGraph from './components/WeatherGraph';
-import SpeedGraph from './components/SpeedGraph';
+import RouteGraph from './components/RouteGraph';
 import { getSeaRoute } from './data/seaRoutes';
+import { type Node } from './data/maritimeGraph';
 
 function App() {
   const [route, setRoute] = useState<[number, number][]>([]);
+  const [routeNodes, setRouteNodes] = useState<Node[]>([]);
   const [startPort, setStartPort] = useState<string>('');
   const [currentPath, setCurrentPath] = useState(window.location.hash);
 
@@ -20,11 +22,13 @@ function App() {
 
   const handlePlanRoute = (start: string, destination: string) => {
     setStartPort(start);
-    const seaRoute = getSeaRoute(start, destination);
-    if (seaRoute) {
-      setRoute(seaRoute);
+    const result = getSeaRoute(start, destination);
+    if (result) {
+      setRoute(result.coordinates);
+      setRouteNodes(result.nodes);
     } else {
       setRoute([]); 
+      setRouteNodes([]);
     }
   };
 
@@ -53,7 +57,9 @@ function App() {
         <div className="dashboard-content">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
             <WeatherGraph locationName={startPort} />
-            <SpeedGraph route={route} />
+          </div>
+          <div style={{ marginTop: '1rem' }}>
+            <RouteGraph nodes={routeNodes} />
           </div>
         </div>
       </main>

@@ -1,11 +1,11 @@
-import { MARITIME_NODES, type NodeId } from './maritimeGraph';
+import { MARITIME_NODES, type NodeId, type Node } from './maritimeGraph';
 
 interface QueueItem {
   nodeId: NodeId;
   cost: number;
 }
 
-export const findShortestPath = (startNodeId: NodeId, endNodeId: NodeId): [number, number][] | null => {
+export const findShortestPath = (startNodeId: NodeId, endNodeId: NodeId): Node[] | null => {
   if (!MARITIME_NODES[startNodeId] || !MARITIME_NODES[endNodeId]) return null;
 
   const costs: Record<NodeId, number> = {};
@@ -23,18 +23,18 @@ export const findShortestPath = (startNodeId: NodeId, endNodeId: NodeId): [numbe
 
     if (current.nodeId === endNodeId) {
       // Found target, reconstruct path
-      const path: [number, number][] = [];
+      const path: Node[] = [];
       let curr = endNodeId;
       
       // Start adding points from the end back to start
-      path.push([MARITIME_NODES[curr].lat, MARITIME_NODES[curr].lng]);
+      path.push(MARITIME_NODES[curr]);
 
       while (curr !== startNodeId) {
         const prevId = backtrace[curr];
         if (!prevId) break; 
         
         const prevNode = MARITIME_NODES[prevId];
-        path.unshift([prevNode.lat, prevNode.lng]);
+        path.unshift(prevNode);
         
         curr = prevId;
       }

@@ -1,7 +1,13 @@
 import { findShortestPath } from "./pathfinding";
 import { portCoordinates } from "./ports";
+import { type Node } from "./maritimeGraph";
 
 type Route = [number, number][];
+
+export interface RouteResult {
+  coordinates: [number, number][];
+  nodes: Node[];
+}
 
 // We no longer use hardcoded routes.
 // However, for backward compatibility with components that might iterate this object
@@ -20,26 +26,35 @@ ports.forEach(p1 => {
   });
 });
 
-export const getSeaRoute = (start: string, destination: string): Route | null => {
+export const getSeaRoute = (start: string, destination: string): RouteResult | null => {
   // Use the new graph-based pathfinding
-  const path = findShortestPath(start, destination);
+  const pathNodes = findShortestPath(start, destination);
   
-  if (path) {
+  if (pathNodes) {
+    const coordinates = pathNodes.map(node => [node.lat, node.lng] as [number, number]);
     // Ensure the specific start/end coordinates from ports.ts are used exactly at the ends
     // (The graph uses them, but good to be explicit if graph has slight deviations)
     const startCoord = portCoordinates[start];
     const endCoord = portCoordinates[destination];
     
     if (startCoord && endCoord) {
-      // Graph path already includes start/end nodes, so this is just a sanity check
-      return path;
+        // We could overwrite the first and last coordinates here if we wanted strict equality
+        // with portCoordinates, but the graph nodes should be consistent.
     }
+    
+    return {
+        coordinates,
+        nodes: pathNodes
+    };
   }
 
   // Fallback to direct line if pathfinding fails (e.g. disconnected graph node)
   if (portCoordinates[start] && portCoordinates[destination]) {
     console.warn(`Pathfinding failed for ${start} -> ${destination}. Using direct line.`);
-    return [portCoordinates[start], portCoordinates[destination]];
+    return {
+        coordinates: [portCoordinates[start], portCoordinates[destination]],
+        nodes: [] // No intermediate nodes known
+    };
   }
 
   return null;
