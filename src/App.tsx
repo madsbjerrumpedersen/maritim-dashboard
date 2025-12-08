@@ -58,7 +58,7 @@ function App() {
             <path d="M3 11L12 2L21 11M5 22H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 22V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="logo-text">MaritimNav</span>
+          <span className="logo-text">GreenSeaOptima</span>
         </div>
         <div className="sidebar-content">
           <RouteForm onPlanRoute={handlePlanRoute} onShipChange={setSelectedShip} />
