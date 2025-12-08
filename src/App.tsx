@@ -3,10 +3,13 @@ import './index.css';
 import Map from './components/Map';
 import RouteForm from './components/RouteForm';
 import NodeEditor from './components/NodeEditor';
+import WeatherGraph from './components/WeatherGraph';
+import SpeedGraph from './components/SpeedGraph';
 import { getSeaRoute } from './data/seaRoutes';
 
 function App() {
   const [route, setRoute] = useState<[number, number][]>([]);
+  const [startPort, setStartPort] = useState<string>('');
   const [currentPath, setCurrentPath] = useState(window.location.hash);
 
   useEffect(() => {
@@ -16,6 +19,7 @@ function App() {
   }, []);
 
   const handlePlanRoute = (start: string, destination: string) => {
+    setStartPort(start);
     const seaRoute = getSeaRoute(start, destination);
     if (seaRoute) {
       setRoute(seaRoute);
@@ -45,6 +49,12 @@ function App() {
       <main className="main-content">
         <div className="map-wrapper">
           <Map route={route} />
+        </div>
+        <div className="dashboard-content">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            <WeatherGraph locationName={startPort} />
+            <SpeedGraph route={route} />
+          </div>
         </div>
       </main>
     </div>

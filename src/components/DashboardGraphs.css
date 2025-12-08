@@ -1,0 +1,228 @@
+.graph-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  height: 380px; /* Increased height for Yr style */
+}
+
+.graph-card h3 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.graph-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* Common Chart Utils */
+.line-chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.line-path {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.area-path {
+  fill: var(--accent-color);
+  fill-opacity: 0.1;
+  stroke: none;
+}
+
+.chart-grid-line {
+  stroke: var(--border-color);
+  stroke-dasharray: 4;
+  stroke-width: 1;
+}
+
+/* Speed Graph specific (Legacy / Standard) */
+.chart-container {
+  flex: 1;
+  position: relative;
+  margin-top: 10px;
+  margin-left: 30px;
+  margin-right: 10px;
+}
+
+.chart-content {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 100%;
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.y-axis {
+  position: absolute;
+  left: -30px;
+  top: 0;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 5px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.x-axis-label {
+  position: absolute;
+  bottom: -20px;
+  width: 100%;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Yr Style Implementation */
+.weather-yr-style {
+  padding: 1rem;
+}
+
+.yr-grid-container {
+  display: flex;
+  flex: 1;
+  min-height: 150px; /* Space for the graph */
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.yr-y-axis {
+  width: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 8px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-right: 1px solid var(--border-color);
+  padding-top: 10px; /* Align with graph top */
+  padding-bottom: 10px; /* Align with graph bottom */
+}
+
+.yr-chart-area {
+  flex: 1;
+  position: relative;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.grid-line {
+  width: 100%;
+  height: 1px;
+  background-color: var(--border-color);
+  opacity: 0.5;
+}
+
+.yr-columns-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.yr-column-top {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding-top: 5px;
+}
+
+.weather-icon {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.yr-row {
+  display: flex;
+  align-items: center;
+  height: 35px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+}
+
+.yr-row.yr-time-row {
+  background-color: var(--bg-light);
+  border-top: 2px solid var(--border-color); /* Thicker divider for axis */
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.yr-row-label {
+  width: 40px; /* Includes Y-axis space */
+  padding-right: 8px;
+  text-align: right;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.yr-row-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.yr-cell {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wind-cell {
+  gap: 4px;
+  color: var(--text-dark);
+}
+
+.wind-arrow-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.wind-speed {
+  font-weight: 600;
+  min-width: 15px;
+}
