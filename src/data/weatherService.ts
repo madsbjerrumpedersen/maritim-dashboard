@@ -1,12 +1,15 @@
 import type { Node } from "./maritimeGraph";
 
-export interface RouteWeatherData {
+export interface HourlyWeather {
+  time: number; // Unix timestamp (ms)
   windSpeed: number; // m/s
   windDir: number; // degrees
 }
 
-export const fetchRouteWeather = async (nodes: Node[]): Promise<Record<string, RouteWeatherData>> => {
-  const weatherMap: Record<string, RouteWeatherData> = {};
+export type RouteForecast = Record<string, HourlyWeather[]>;
+
+export const fetchRouteWeather = async (nodes: Node[]): Promise<RouteForecast> => {
+  const weatherMap: RouteForecast = {};
   
   // Filter for unique cities or stops to avoid duplicate requests
   const stops = nodes.filter(n => n.isCity);
@@ -18,16 +21,19 @@ export const fetchRouteWeather = async (nodes: Node[]): Promise<Record<string, R
 
   const requests = stopsToFetch.map(async (stop) => {
     try {
-      // Fetch current weather only
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${stop.lat}&longitude=${stop.lng}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms`;
+      // Fetch hourly forecast for 14 days (long voyages)
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${stop.lat}&longitude=${stop.lng}&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&forecast_days=14`;
       const response = await fetch(url);
       const data = await response.json();
 
-      if (data.current) {
-        weatherMap[stop.id] = {
-          windSpeed: data.current.wind_speed_10m,
-          windDir: data.current.wind_direction_10m
-        };
+      if (data.hourly) {
+        const hourlyData: HourlyWeather[] = data.hourly.time.map((t: string, index: number) => ({
+          time: new Date(t).getTime(),
+          windSpeed: data.hourly.wind_speed_10m[index],
+          windDir: data.hourly.wind_direction_10m[index]
+        }));
+        
+        weatherMap[stop.id] = hourlyData;
       }
     } catch (error) {
       console.warn(`Failed to fetch weather for ${stop.id}`, error);

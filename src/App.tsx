@@ -8,14 +8,15 @@ import RouteGraph from './components/RouteGraph';
 import { getSeaRoute } from './data/seaRoutes';
 import { type Node } from './data/maritimeGraph';
 import { type ShipProfile, DEFAULT_SHIP } from './data/ships';
-import { fetchRouteWeather } from './data/weatherService';
+import { fetchRouteWeather, type RouteForecast } from './data/weatherService';
 
 function App() {
   const [route, setRoute] = useState<[number, number][]>([]);
   const [routeNodes, setRouteNodes] = useState<Node[]>([]);
   const [selectedShip, setSelectedShip] = useState<ShipProfile>(DEFAULT_SHIP);
-  const [weatherData, setWeatherData] = useState<Record<string, { windSpeed: number; windDir: number }>>({});
+  const [weatherData, setWeatherData] = useState<RouteForecast>({});
   const [startPort, setStartPort] = useState<string>('');
+  const [startTime, setStartTime] = useState<number>(Date.now());
   const [currentPath, setCurrentPath] = useState(window.location.hash);
 
   useEffect(() => {
@@ -24,10 +25,15 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  const handlePlanRoute = async (start: string, destination: string) => {
+  const handlePlanRoute = async (start: string, destination: string, date: string) => {
     setStartPort(start);
     setWeatherData({}); // Reset weather
     
+    // Parse date string (YYYY-MM-DD) to timestamp
+    // Default to noon on that day to be safe/middle of day
+    const startTimestamp = new Date(date + 'T12:00:00').getTime();
+    setStartTime(startTimestamp);
+
     const result = getSeaRoute(start, destination);
     if (result) {
       setRoute(result.coordinates);
@@ -73,7 +79,12 @@ function App() {
             <WeatherGraph locationName={startPort} />
           </div>
           <div style={{ marginTop: '1rem' }}>
-            <RouteGraph nodes={routeNodes} shipProfile={selectedShip} weatherData={weatherData} />
+            <RouteGraph 
+              nodes={routeNodes} 
+              shipProfile={selectedShip} 
+              weatherData={weatherData} 
+              startTime={startTime}
+            />
           </div>
         </div>
       </main>

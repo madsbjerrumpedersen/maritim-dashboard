@@ -63,8 +63,6 @@
 
         { nodeId: "WP_BabElMandeb_Suez_South_0", distance: 255.57 },
 
-        { nodeId: "WP_BabElMandeb_Dubai_0", distance: 563.93 },
-
         { nodeId: "WP_BabElMandeb_Mumbai_0", distance: 678.01 },
 
         { nodeId: "WP_BabElMandeb_SriLanka_South_0", distance: 499.6 },
@@ -103,7 +101,7 @@
 
       neighbors: [
 
-        { nodeId: "WP_Busan_Shanghai_0", distance: 280.55 },
+        { nodeId: "node_1765217322707", distance: 145 },
 
       ]
 
@@ -181,9 +179,7 @@
 
       neighbors: [
 
-        { nodeId: "WP_BabElMandeb_Dubai_1", distance: 121.28 },
-
-        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 423.97 },
+        { nodeId: "WP_BabElMandeb_Dubai_1", distance: 121 },
 
       ]
 
@@ -425,9 +421,9 @@
 
       id: "LuzonStrait",
 
-      lat: 20,
+      lat: 20.179687091635458,
 
-      lng: 120,
+      lng: 120.36621093750001,
 
       isCity: false,
 
@@ -437,9 +433,7 @@
 
         { nodeId: "WP_LuzonStrait_Tokyo_0", distance: 504.69 },
 
-        { nodeId: "WP_LuzonStrait_Pacific_Mid_0", distance: 1130.51 },
-
-        { nodeId: "WP_LuzonStrait_Sydney_0", distance: 1291.44 },
+        { nodeId: "node_1765217418873", distance: 1979 },
 
       ]
 
@@ -479,7 +473,7 @@
 
         { nodeId: "WP_BabElMandeb_Mumbai_0", distance: 1065.87 },
 
-        { nodeId: "SriLanka_South", distance: 919.11 },
+        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 633 },
 
       ]
 
@@ -805,10 +799,6 @@
 
         { nodeId: "WP_BabElMandeb_SriLanka_South_1", distance: 622.84 },
 
-        { nodeId: "Mumbai", distance: 919.11 },
-
-        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 1422.87 },
-
         { nodeId: "WP_Malacca_North_SriLanka_South_0", distance: 455.98 },
 
         { nodeId: "WP_GoodHope_SriLanka_South_0", distance: 2328.09 },
@@ -881,9 +871,9 @@
 
       id: "Taiwan_North",
 
-      lat: 25.5,
+      lat: 25.84933340061099,
 
-      lng: 122,
+      lng: 121.77246093750001,
 
       isCity: false,
 
@@ -909,11 +899,7 @@
 
       neighbors: [
 
-        { nodeId: "WP_Shanghai_Tokyo_1", distance: 278.08 },
-
-        { nodeId: "WP_LuzonStrait_Tokyo_0", distance: 843.17 },
-
-        { nodeId: "WP_Pacific_Mid_Tokyo_0", distance: 934.33 },
+        { nodeId: "node_1765217380775", distance: 31 },
 
       ]
 
@@ -981,41 +967,21 @@
 
     },
 
-    "WP_BabElMandeb_Dubai_0": {
-
-      id: "WP_BabElMandeb_Dubai_0",
-
-      lat: 13.5819,
-
-      lng: 53.0777,
-
-      isCity: false,
-
-      neighbors: [
-
-        { nodeId: "BabElMandeb", distance: 563.93 },
-
-        { nodeId: "WP_BabElMandeb_Dubai_1", distance: 791.24 },
-
-      ]
-
-    },
-
     "WP_BabElMandeb_Dubai_1": {
 
       id: "WP_BabElMandeb_Dubai_1",
 
-      lat: 26.5,
+      lat: 26.55905200817132,
 
-      lng: 56.5,
+      lng: 56.29394531250001,
 
       isCity: false,
 
       neighbors: [
 
-        { nodeId: "WP_BabElMandeb_Dubai_0", distance: 791.24 },
+        { nodeId: "Dubai", distance: 121 },
 
-        { nodeId: "Dubai", distance: 121.28 },
+        { nodeId: "node_1765217261343", distance: 168 },
 
       ]
 
@@ -1036,6 +1002,8 @@
         { nodeId: "BabElMandeb", distance: 678.01 },
 
         { nodeId: "Mumbai", distance: 1065.87 },
+
+        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 625 },
 
       ]
 
@@ -1076,6 +1044,8 @@
         { nodeId: "WP_BabElMandeb_SriLanka_South_0", distance: 1090.28 },
 
         { nodeId: "SriLanka_South", distance: 622.84 },
+
+        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 959 },
 
       ]
 
@@ -1133,9 +1103,9 @@
 
       neighbors: [
 
-        { nodeId: "Busan", distance: 280.55 },
-
         { nodeId: "Shanghai", distance: 167.97 },
+
+        { nodeId: "node_1765217322707", distance: 156 },
 
       ]
 
@@ -1235,9 +1205,13 @@
 
       neighbors: [
 
-        { nodeId: "Dubai", distance: 423.97 },
+        { nodeId: "WP_BabElMandeb_Mumbai_0", distance: 625 },
 
-        { nodeId: "SriLanka_South", distance: 1422.87 },
+        { nodeId: "node_1765217261343", distance: 248 },
+
+        { nodeId: "Mumbai", distance: 633 },
+
+        { nodeId: "WP_BabElMandeb_SriLanka_South_1", distance: 959 },
 
       ]
 
@@ -1769,24 +1743,6 @@
 
     },
 
-    "WP_LuzonStrait_Pacific_Mid_0": {
-
-      id: "WP_LuzonStrait_Pacific_Mid_0",
-
-      lat: 22,
-
-      lng: 140,
-
-      isCity: false,
-
-      neighbors: [
-
-        { nodeId: "LuzonStrait", distance: 1130.51 },
-
-      ]
-
-    },
-
     "WP_LuzonStrait_SouthChinaSea_South_0": {
 
       id: "WP_LuzonStrait_SouthChinaSea_South_0",
@@ -1827,41 +1783,21 @@
 
     },
 
-    "WP_LuzonStrait_Sydney_0": {
-
-      id: "WP_LuzonStrait_Sydney_0",
-
-      lat: 0,
-
-      lng: 145,
-
-      isCity: false,
-
-      neighbors: [
-
-        { nodeId: "LuzonStrait", distance: 1291.44 },
-
-        { nodeId: "WP_LuzonStrait_Sydney_1", distance: 911.03 },
-
-      ]
-
-    },
-
     "WP_LuzonStrait_Sydney_1": {
 
       id: "WP_LuzonStrait_Sydney_1",
 
-      lat: -10,
+      lat: -9.492422820567667,
 
-      lng: 152,
+      lng: 151.80908203125003,
 
       isCity: false,
 
       neighbors: [
 
-        { nodeId: "WP_LuzonStrait_Sydney_0", distance: 911.03 },
-
         { nodeId: "node_1764702194323", distance: 1251 },
+
+        { nodeId: "node_1765217417416", distance: 439 },
 
       ]
 
@@ -1881,7 +1817,7 @@
 
         { nodeId: "LuzonStrait", distance: 504.69 },
 
-        { nodeId: "Tokyo", distance: 843.17 },
+        { nodeId: "node_1765217310132", distance: 307 },
 
       ]
 
@@ -2027,44 +1963,6 @@
 
     },
 
-    "WP_Pacific_Mid_Tokyo_0": {
-
-      id: "WP_Pacific_Mid_Tokyo_0",
-
-      lat: 40,
-
-      lng: 180,
-
-      isCity: false,
-
-      neighbors: [
-
-        { nodeId: "WP_Pacific_Mid_Tokyo_1", distance: 1486.31 },
-
-      ]
-
-    },
-
-    "WP_Pacific_Mid_Tokyo_1": {
-
-      id: "WP_Pacific_Mid_Tokyo_1",
-
-      lat: 36,
-
-      lng: 150,
-
-      isCity: false,
-
-      neighbors: [
-
-        { nodeId: "WP_Pacific_Mid_Tokyo_0", distance: 1486.31 },
-
-        { nodeId: "Tokyo", distance: 934.33 },
-
-      ]
-
-    },
-
     "WP_Shanghai_Tokyo_0": {
 
       id: "WP_Shanghai_Tokyo_0",
@@ -2079,7 +1977,9 @@
 
         { nodeId: "Shanghai", distance: 308.25 },
 
-        { nodeId: "WP_Shanghai_Tokyo_1", distance: 373.88 },
+        { nodeId: "node_1765217322707", distance: 111 },
+
+        { nodeId: "node_1765217309160", distance: 139 },
 
       ]
 
@@ -2097,9 +1997,9 @@
 
       neighbors: [
 
-        { nodeId: "WP_Shanghai_Tokyo_0", distance: 373.88 },
+        { nodeId: "node_1765217310132", distance: 298 },
 
-        { nodeId: "Tokyo", distance: 278.08 },
+        { nodeId: "node_1765217352503", distance: 203 },
 
       ]
 
@@ -2226,6 +2126,190 @@
         { nodeId: "WP_EnglishChannel_West_HornOfBrazil_0", distance: 299 },
 
         { nodeId: "Gibraltar_West", distance: 924 },
+
+      ]
+
+    },
+
+    "node_1765217261343": {
+
+      id: "node_1765217261343",
+
+      lat: 24.545357955956256,
+
+      lng: 58.45275878906251,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "WP_Dubai_SriLanka_South_0", distance: 248 },
+
+        { nodeId: "WP_BabElMandeb_Dubai_1", distance: 168 },
+
+      ]
+
+    },
+
+    "node_1765217309160": {
+
+      id: "node_1765217309160",
+
+      lat: 28.700694494279766,
+
+      lng: 128.23390405724876,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "WP_Shanghai_Tokyo_0", distance: 139 },
+
+        { nodeId: "node_1765217310132", distance: 173 },
+
+      ]
+
+    },
+
+    "node_1765217310132": {
+
+      id: "node_1765217310132",
+
+      lat: 29.047023686916642,
+
+      lng: 131.50782983849876,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "node_1765217309160", distance: 173 },
+
+        { nodeId: "WP_Shanghai_Tokyo_1", distance: 298 },
+
+        { nodeId: "WP_LuzonStrait_Tokyo_0", distance: 307 },
+
+      ]
+
+    },
+
+    "node_1765217322707": {
+
+      id: "node_1765217322707",
+
+      lat: 32.85223391383126,
+
+      lng: 127.90431421349875,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "Busan", distance: 145 },
+
+        { nodeId: "WP_Shanghai_Tokyo_0", distance: 111 },
+
+        { nodeId: "WP_Busan_Shanghai_0", distance: 156 },
+
+      ]
+
+    },
+
+    "node_1765217352503": {
+
+      id: "node_1765217352503",
+
+      lat: 34.23129552720446,
+
+      lng: 138.77929687500003,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "node_1765217378571", distance: 54 },
+
+        { nodeId: "WP_Shanghai_Tokyo_1", distance: 203 },
+
+      ]
+
+    },
+
+    "node_1765217378571": {
+
+      id: "node_1765217378571",
+
+      lat: 34.97888856330414,
+
+      lng: 139.37255859375003,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "node_1765217380775", distance: 20 },
+
+        { nodeId: "node_1765217352503", distance: 54 },
+
+      ]
+
+    },
+
+    "node_1765217380775": {
+
+      id: "node_1765217380775",
+
+      lat: 35.10031900152854,
+
+      lng: 139.75158691406253,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "Tokyo", distance: 31 },
+
+        { nodeId: "node_1765217378571", distance: 20 },
+
+      ]
+
+    },
+
+    "node_1765217417416": {
+
+      id: "node_1765217417416",
+
+      lat: -2.884774586628931,
+
+      lng: 154.97314453125003,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "WP_LuzonStrait_Sydney_1", distance: 439 },
+
+        { nodeId: "node_1765217418873", distance: 488 },
+
+      ]
+
+    },
+
+    "node_1765217418873": {
+
+      id: "node_1765217418873",
+
+      lat: 1.2666124786481983,
+
+      lng: 147.98583984375003,
+
+      isCity: false,
+
+      neighbors: [
+
+        { nodeId: "node_1765217417416", distance: 488 },
+
+        { nodeId: "LuzonStrait", distance: 1979 },
 
       ]
 

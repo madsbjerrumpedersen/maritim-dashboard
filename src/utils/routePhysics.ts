@@ -1,5 +1,6 @@
 import type { Node } from "../data/maritimeGraph";
 import type { ShipProfile } from "../data/ships";
+import type { RouteForecast, HourlyWeather } from "../data/weatherService";
 
 export interface VoyagePoint {
   distanceKm: number;
@@ -10,6 +11,8 @@ export interface VoyagePoint {
   windDir: number; // degrees
   isStop: boolean;
   stopName?: string;
+  segmentBearing: number;
+  speedPenalty: number;
 }
 
 export interface VoyageSummary {
@@ -18,11 +21,6 @@ export interface VoyageSummary {
   totalCo2Kg: number;
   avgSpeedKnots: number;
   segments: VoyagePoint[];
-}
-
-interface WeatherSnapshot {
-  windSpeed: number; // m/s
-  windDir: number; // degrees
 }
 
 // Helpers
@@ -41,7 +39,8 @@ const calculateBearing = (lat1: number, lng1: number, lat2: number, lng2: number
 export const calculateVoyageProfile = (
   nodes: Node[],
   ship: ShipProfile,
-  weatherMap: Record<string, WeatherSnapshot> // Keyed by stop ID (or closest stop)
+  weatherMap: RouteForecast, // Keyed by stop ID (or closest stop)
+  startTime: number = Date.now()
 ): VoyageSummary => {
   if (nodes.length < 2) {
     return {
@@ -62,12 +61,14 @@ export const calculateVoyageProfile = (
   segments.push({
     distanceKm: 0,
     timeHours: 0,
-    speedKnots: 0, // Speed 0 at dock
+    speedKnots: ship.cruiseSpeed, // Start at cruise speed (simplification for graph visuals)
     co2Kg: 0,
     windSpeed: 0,
     windDir: 0,
     isStop: true,
-    stopName: nodes[0].id
+    stopName: nodes[0].id,
+    segmentBearing: 0,
+    speedPenalty: 0
   });
 
   // Iterate route segments
@@ -82,23 +83,35 @@ export const calculateVoyageProfile = (
     
     const bearing = calculateBearing(start.lat, start.lng, end.lat, end.lng);
 
-    // 2. Determine Weather for this segment
-    // Logic: Look up weather for the 'start' node. 
-    // Ideally we interpolate between start/end weather, but nearest neighbor (start) is fine for V1.
-    // If no weather found (e.g. intermediate waypoints without weather data), default to 5 m/s headwind as generic sea condition.
-    // We assume 'weatherMap' keys match city IDs. If a node is not a city, we look back to last city.
-    let weather = weatherMap[start.id];
-    if (!weather) {
+    // 2. Determine Weather for this segment at CURRENT TRIP TIME
+    const currentTripTime = startTime + (totalTimeHours * 3600 * 1000);
+    
+    // Find relevant forecast array
+    let forecast: HourlyWeather[] | undefined = weatherMap[start.id];
+    if (!forecast) {
        // Find last known city
        for(let j=i; j>=0; j--) {
            if (nodes[j].isCity && weatherMap[nodes[j].id]) {
-               weather = weatherMap[nodes[j].id];
+               forecast = weatherMap[nodes[j].id];
                break;
            }
        }
     }
-    // Default weather if completely missing
-    if (!weather) weather = { windSpeed: 5, windDir: (bearing + 180) % 360 }; 
+
+    let weather: { windSpeed: number; windDir: number };
+    
+    if (forecast && forecast.length > 0) {
+        // Find nearest hour
+        // Optimization: Assuming forecast is sorted by time.
+        // Simple search:
+        const nearest = forecast.reduce((prev, curr) => 
+            Math.abs(curr.time - currentTripTime) < Math.abs(prev.time - currentTripTime) ? curr : prev
+        );
+        weather = { windSpeed: nearest.windSpeed, windDir: nearest.windDir };
+    } else {
+        // Default weather if completely missing
+        weather = { windSpeed: 5, windDir: (bearing + 180) % 360 }; 
+    }
 
     // 3. Physics Calculation (Wind Impact)
     // Relative Wind Angle: 0 = Tailwind, 180 = Headwind
@@ -158,7 +171,9 @@ export const calculateVoyageProfile = (
       windSpeed: weather.windSpeed,
       windDir: weather.windDir,
       isStop: end.isCity,
-      stopName: end.isCity ? end.id : undefined
+      stopName: end.isCity ? end.id : undefined,
+      segmentBearing: bearing,
+      speedPenalty: Number(speedPenalty.toFixed(1))
     });
   }
 

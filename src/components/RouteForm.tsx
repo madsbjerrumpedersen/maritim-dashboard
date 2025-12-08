@@ -8,11 +8,12 @@ import { SHIPS, type ShipProfile } from '../data/ships';
 const uniquePorts = [...new Set(Object.keys(allRoutes).flatMap(key => key.split('-')))];
 
 const RouteForm: React.FC<{ 
-  onPlanRoute: (start: string, destination: string) => void;
+  onPlanRoute: (start: string, destination: string, date: string) => void;
   onShipChange: (ship: ShipProfile) => void;
 }> = ({ onPlanRoute, onShipChange }) => {
   const [start, setStart] = useState(uniquePorts[0]);
   const [destination, setDestination] = useState(uniquePorts[1]);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   
   // Default to first ship
   const defaultShipId = Object.keys(SHIPS)[0];
@@ -63,7 +64,7 @@ const RouteForm: React.FC<{
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    onPlanRoute(start, destination);
+    onPlanRoute(start, destination, startDate);
   };
 
   const handleStartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -85,6 +86,8 @@ const RouteForm: React.FC<{
     }
   };
 
+  const selectedShip = SHIPS[selectedShipId];
+
   const ChevronDown = () => (
     <svg className="select-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -98,6 +101,18 @@ const RouteForm: React.FC<{
         <div className="section-title">Ruteoplysninger</div>
         
         <div className="route-timeline">
+          <div className="form-group timeline-point">
+            <label htmlFor="startDate">Afgangsdato</label>
+            <input 
+              type="date" 
+              id="startDate" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+              className="form-control"
+              style={{ fontFamily: 'inherit' }}
+            />
+          </div>
+
           <div className="form-group timeline-point">
             <label htmlFor="start">Afgangshavn</label>
             <div className="custom-select-wrapper">
@@ -148,6 +163,32 @@ const RouteForm: React.FC<{
             <ChevronDown />
           </div>
         </div>
+
+        {selectedShip && (
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.75rem', 
+            background: 'rgba(255,255,255,0.05)', 
+            borderRadius: '4px',
+            fontSize: '0.8rem',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.5rem'
+          }}>
+            <div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Marchhastighed</div>
+              <div style={{ fontWeight: '600' }}>{selectedShip.cruiseSpeed} kn</div>
+            </div>
+            <div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Max Fart</div>
+              <div style={{ fontWeight: '600' }}>{selectedShip.maxSpeed} kn</div>
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>Brændstof</div>
+              <div style={{ fontWeight: '600' }}>{selectedShip.fuelConsumptionAtCruise} kg/nm</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <button type="submit" className="submit-btn">
